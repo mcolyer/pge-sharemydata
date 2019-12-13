@@ -147,7 +147,7 @@ func FormatDataForGrafana(feed Feed) string {
 
 	output := ""
 	for timeInNanoseconds, value := range dataPoints {
-		output = output + fmt.Sprintf("grid_usage_wh value=%d %d\n", value, timeInNanoseconds)
+		output = output + fmt.Sprintf("power grid_wh=%d %d\n", value, timeInNanoseconds)
 	}
 
 	log.Printf("Data formatted successfully, %d datapoints", len(dataPoints))
