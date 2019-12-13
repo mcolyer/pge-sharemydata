@@ -16,7 +16,6 @@ func TestIntegrationRequestingData(t *testing.T) {
 }
 
 func TestIntegrationReceivingData(t *testing.T) {
-	t.Skip()
 	body := bytes.NewBufferString(`<?xml version="1.0" encoding="UTF-8"?>
 <ns0:BatchList xmlns:ns0="http://naesb.org/espi"><ns0:resources>https://api.pge.com/GreenButtonConnect/espi/1_1/resource/Batch/Bulk/50952?correlationID=98cd4976-b79a-4fd9-addc-4e86e16717e9</ns0:resources><ns0:resources>https://api.pge.com/GreenButtonConnect/espi/1_1/resource/Batch/Bulk/50952?correlationID=42426c3e-1d4a-4ac6-9bcf-428cdaca9a44</ns0:resources></ns0:BatchList>`)
 	req := httptest.NewRequest("POST", "http://localhost/api/webhooks/pge-daily-update", body)

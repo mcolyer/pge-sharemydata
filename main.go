@@ -74,6 +74,8 @@ func (c *PGEClient) RequestToken(clientId string, clientSecret string) {
 }
 
 func (c *PGEClient) RequestURL(url string) *http.Response {
+	log.Printf("Requesting %s", url)
+
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Authorization", "Bearer "+c.Token.Value)
 
@@ -82,7 +84,7 @@ func (c *PGEClient) RequestURL(url string) *http.Response {
 		log.Fatal(err)
 	}
 
-	output, err := httputil.DumpResponse(resp, true)
+	output, err := httputil.DumpResponse(resp, false)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
@@ -106,6 +108,8 @@ type IntervalReading struct {
 }
 
 func ParseData(data string) Feed {
+	log.Print("Parsing data")
+
 	var feed Feed
 	err := xml.Unmarshal([]byte(data), &feed)
 
@@ -113,10 +117,13 @@ func ParseData(data string) Feed {
 		log.Fatalf("error: %v", err)
 	}
 
+	log.Print("Data parsed successfully")
 	return feed
 }
 
 func FormatDataForGrafana(feed Feed) string {
+	log.Print("Formatting data")
+
 	dataPoints := make(map[int]int)
 	flowDirection := 0
 	for _, entry := range feed.Entries {
@@ -142,21 +149,27 @@ func FormatDataForGrafana(feed Feed) string {
 	for timeInNanoseconds, value := range dataPoints {
 		output = output + fmt.Sprintf("grid_usage_wh value=%d %d\n", value, timeInNanoseconds)
 	}
+
+	log.Printf("Data formatted successfully, %d datapoints", len(dataPoints))
 	return output
 }
 
 func SendDataToGrafana(data string) {
+	log.Print("Sending data to grafana")
+
 	url := os.Getenv("INFLUXDB_URL") + "/write?db=" + os.Getenv("INFLUXDB_DB")
 	resp, err := http.Post(url, "application/octet-stream", bytes.NewBuffer([]byte(data)))
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
 
-	output, err := httputil.DumpResponse(resp, true)
+	output, err := httputil.DumpResponse(resp, false)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
 	log.Printf("%s", output)
+
+	log.Print("Data sent successfully")
 }
 
 func main() {
@@ -166,7 +179,7 @@ func main() {
 }
 
 func ReceiveWebhook(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
+	log.Print("Received webhook")
 
 	var client PGEClient
 	client.Authorize(os.Getenv("PGE_CLIENT_ID"), os.Getenv("PGE_CLIENT_SECRET"), os.Getenv("SSL_CERT"), os.Getenv("SSL_KEY"))
@@ -189,6 +202,9 @@ func ReceiveWebhook(w http.ResponseWriter, r *http.Request) {
 		// Don't do the second one
 		break
 	}
+
+	w.WriteHeader(200)
+	log.Print("Webhook successfully processed")
 }
 
 func ParseRequestBody(reader io.Reader) []Resource {
@@ -203,9 +219,13 @@ func ParseRequestBody(reader io.Reader) []Resource {
 }
 
 func RequestWebhook(w http.ResponseWriter, r *http.Request) {
+	log.Print("Requesting data")
+
 	var client PGEClient
 	client.Authorize(os.Getenv("PGE_CLIENT_ID"), os.Getenv("PGE_CLIENT_SECRET"), os.Getenv("SSL_CERT"), os.Getenv("SSL_KEY"))
 
 	client.RequestURL("https://api.pge.com/GreenButtonConnect/espi/1_1/resource/Batch/Bulk/" + os.Getenv("PGE_BULK_ID"))
+
 	w.WriteHeader(200)
+	log.Print("Data successfully processed")
 }
